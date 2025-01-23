@@ -1,56 +1,29 @@
-from py2neo import Graph
-import json,os
-from py2neo import Graph,Node,Relationship
-from py2neo.bulk import create_nodes
+from py2neo import Graph, Node, Relationship
+from py2neo.bulk import merge_nodes, merge_relationships
 
 class dbneo:
-# using BOLT
-    def __init__(self) -> None:
+    def __init__(self):
         self.graph = Graph("neo4j://localhost:7687", auth=("neo4j", "123456789"))
 
-
-    def runCQL(self,cql):
+    def runCQL(self, cql):
         self.graph.run(cql)
 
-    #dict={"Key":value}
-    def createNode(self,label,labelvalue,dict):
-        node=Node(label,name=labelvalue)
-        for k,v in dict.items():
-            node[k]=v
-        self.graph.merge(node,str(label),"name")
+    # 数据类型转换函数
+    def convert_to_python_types(self, data):
+        return {
+            k: (float(v) if isinstance(v, (int, float)) else str(v) if v is not None else None)
+            for k, v in data.items()
+        }
+
+    # 创建节点
+    def createNode(self, label, labelvalue, attributes):
+        attributes = self.convert_to_python_types(attributes)
+        node = Node(label, name=labelvalue, **attributes)
+        self.graph.merge(node, label, "name")
         return node
 
-    #dict={start:{label:xxxx value:xxxxx},end:{label:xxxx,value:xxxxxxx}}
-    def createRelation(self,label,dict):
-        start_label=dict["start"]["label"]
-        end_label=dict["end"]["label"]
-
-        start_node=Node(start_label,name=dict["start"]["value"])
-        end_node=Node(end_label,name=dict["end"]["value"])
-
-        relation = Relationship(start_node, label, end_node)
+    # 创建关系
+    def createRelationFromStartToEnd(self, label, start, end, attributes):
+        attributes = self.convert_to_python_types(attributes)
+        relation = Relationship(start, label, end, **attributes)
         self.graph.merge(relation)
-
-    def createRelationFromStartToEnd(self,label,start,end,dict):
-        # start_label=dict["start"]["label"]
-        # end_label=dict["end"]["label"]
-
-        # start_node=Node(start_label,name=dict["start"]["value"])
-        # end_node=Node(end_label,name=dict["end"]["value"])
-
-        relation = Relationship(start, label, end)
-        if dict:
-            for k,v in dict.items():
-                relation[k]=v
-        self.graph.merge(relation)
-
-    def QueryNodes(self):
-        cql= " match (m) return m "
-        datas=self.graph.run(cql).data()
-        return datas
-
-    def QueryRelation(self):
-        cql="match (m)-[r]->(n) return type(r) as relation_name,m.name as startname,n.name as endname"
-        datas=self.graph.run(cql).data()
-        return datas
-

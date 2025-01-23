@@ -51,7 +51,7 @@ for index,row in df.iterrows():
         nodes[start_label]={}
     if not start_name in nodes[start_label]:
         attr={"FoodCode":row["Food code"],"MainFoodDescription":row["Main food description"],"AdditionalFoodDescription":row["Additional food description"]}
-        node=db.createNode(start_label,start_name,attr)
+        node=db.createNode(start_label,start_name,attr) # problems here
         nodes[start_label][start_name]=node
 
     end_label="FoodCategory"
@@ -364,8 +364,5 @@ for index,row in df.iterrows():
 
     print(index,end=" ")
 
-  
 
-
-    
 
